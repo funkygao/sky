@@ -70,7 +70,7 @@ func NewServer(port uint, path string) *Server {
 	s := &Server{
 		httpServer: &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r},
 		router:     r,
-		logger:     log.New(os.Stdout, "", log.LstdFlags),
+		logger:     log.New(os.Stdout, "", log.Ldate|log.Lshortfile|log.Ltime|log.Lmicroseconds),
 		path:       path,
 		tables:     make(map[string]*Table),
 	}
@@ -80,7 +80,7 @@ func NewServer(port uint, path string) *Server {
 	s.router.HandleFunc("/debug/pprof/profile", pprof.Profile)
 	s.router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 
-	s.addHandlers()
+	s.addHandlers() // ping handler
 	s.addTableHandlers()
 	s.addPropertyHandlers()
 	s.addEventHandlers()
@@ -320,8 +320,11 @@ func (s *Server) ApiHandleFunc(route string, handlerFunction func(http.ResponseW
 		}
 		w.WriteHeader(status)
 
+		// debug request body
+		s.logger.Printf("debug req body: %+v\n", params)
+
 		// Write to access log.
-		s.logger.Printf("%s \"%s %s %s\" %d %0.3f", req.RemoteAddr, req.Method, req.RequestURI, req.Proto, status, time.Since(t0).Seconds())
+		s.logger.Printf("%s \"%s %s %s\" %d %dus", req.RemoteAddr, req.Method, req.RequestURI, req.Proto, status, time.Since(t0).Nanoseconds()/1000)
 		if status != http.StatusOK {
 			s.logger.Printf("ERROR %v", err)
 		}

@@ -22,7 +22,7 @@ import (
 
 // A Servlet is a small wrapper around a single shard of a LevelDB data file.
 type Servlet struct {
-	path    string
+	path    string // data/0
 	db      *levigo.DB
 	factors *Factors
 	mutex   sync.Mutex
