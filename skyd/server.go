@@ -70,7 +70,7 @@ func NewServer(port uint, path string) *Server {
 	s := &Server{
 		httpServer: &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r},
 		router:     r,
-		logger:     log.New(os.Stdout, "", log.LstdFlags),
+		logger:     log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile),
 		path:       path,
 		tables:     make(map[string]*Table),
 	}
