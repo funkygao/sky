@@ -17,12 +17,12 @@ import (
 //------------------------------------------------------------------------------
 
 const (
-	defaultPort = 8585
+	defaultPort    = 8585
 	defaultDataDir = "/var/lib/sky"
 )
 
 const (
-	portUsage = "the port to listen on"
+	portUsage    = "the port to listen on"
 	dataDirUsage = "the data directory"
 )
 
@@ -38,6 +38,7 @@ const (
 
 var port uint
 var dataDir string
+var silence bool
 
 //------------------------------------------------------------------------------
 //
@@ -54,6 +55,7 @@ func init() {
 	flag.UintVar(&port, "p", defaultPort, portUsage+"(shorthand)")
 	flag.StringVar(&dataDir, "data-dir", defaultDataDir, dataDirUsage)
 	flag.StringVar(&dataDir, "d", defaultDataDir, dataDirUsage+"(shorthand)")
+	flag.BoolVar(&silence, "q", true, "Silence")
 }
 
 //--------------------------------------
@@ -63,15 +65,18 @@ func init() {
 func main() {
 	// Parse the command line arguments.
 	flag.Parse()
-	
+
 	// Hardcore parallelism right here.
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	
+
 	// Initialize
 	server := skyd.NewServer(port, dataDir)
 	writePidFile()
 	//setupSignalHandlers(server)
-	
+	if silence {
+		server.Silence()
+	}
+
 	// Start the server up!
 	c := make(chan bool)
 	err := server.ListenAndServe(c)
@@ -80,7 +85,7 @@ func main() {
 		cleanup(server)
 		return
 	}
-	<- c
+	<-c
 	cleanup(server)
 }
 
@@ -92,13 +97,13 @@ func main() {
 func setupSignalHandlers(server *skyd.Server) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	go func(){
-	    for _ = range c {
+	go func() {
+		for _ = range c {
 			fmt.Fprintln(os.Stderr, "Shutting down...")
 			cleanup(server)
 			fmt.Fprintln(os.Stderr, "Shutdown complete.")
 			os.Exit(1)
-	    }
+		}
 	}()
 }
 
